@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" 
+  rel="stylesheet" 
+  integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" 
+  crossorigin="anonymous">
+  <script defer>
+  document.addEventListener('DOMContentLoaded', () => {
+  
+  class Student {
+  constructor(name, surname, lastname, birthday, dayStartEducation, facult) {
+    this.name = name
+    this.surname = surname
+    this.lastname = lastname
+    this.birthday = birthday
+    this.dayStartEducation = dayStartEducation
+    this.facult = facult
+  }
+
+  get fio() {
+    return this.surname + ' ' + this.name + ' ' + this.lastname;
+  }
+
+  formateBirthday() {
+    let dd = this.birthday.getDate();
+    if (dd < 10) dd = '0' + dd;
+    
+    let dm = this.birthday.getMonth();
+    if (dm < 10) dm = '0' + dm;
+
+    let dy = this.birthday.getFullYear();
+
+    return dd + '.' + dm + '.' + dy;
+  }
+
+  educationCurses() {
+    let now = new Date();
+    let yearStartEd = this.dayStartEducation.getFullYear();
+    let curs = now.getFullYear() - yearStartEd;
+    if (curs > 4 || curs == 4 && now.getMonth() > 9) {
+      return yearStartEd + '-' + (yearStartEd + 4) + ' (закончил)';
+    }
+    if (now.getMonth() > 8 && curs < 4) {
+      curs++;
+    }
+    return yearStartEd + '-' + (yearStartEd + 4) + ' (' + curs + ' курс)';
+  }
+
+  odlStudent() {
+    let now = new Date();
+    let old = now.getFullYear() - this.birthday.getFullYear();
+    return '(' + old + ' лет)';
+  }
+}
+  
+  const FORM_NAME = document.getElementById('name'),
+        FORM_FACULT = document.getElementById('facult'),
+        FORM_BIRTHDAY = document.getElementById('birthday'),
+        FORM_DATE_START_EDUCATION = document.getElementById('educationDate'),
+        BTN_ADD_STUDENT = document.getElementById('btnAddStudent'),
+        TABLE_BODY = document.querySelector('.table-body'),
+        TABLE_TITLE = document.querySelectorAll('.table-title th'),
+        ALERT_MSG = document.querySelector('.alert-msg'),
+        SEARCH_FIO = document.getElementById('search-fio'),
+        SEARCH_FACULT = document.getElementById('search-facult'),
+        SEARCH_BIRTHDAY = document.getElementById('search-birthday'),
+        SEARCH_EDUCATION_YEAR = document.getElementById('search-education-years'),
+        SEARCH_INPUT = document.querySelectorAll('.filter div input');
+  
+  const students = [
+    new Student('Максим', 'Генералов', 'Александрович', new Date(1992, 11, 24), new Date(2019, 9, 1), 'математика'),
+    new Student('Марина', 'Бузенкова', 'Михайловна', new Date(1996, 8, 23), new Date(2021, 9, 1), 'социалогия'),
+    new Student('Инна', 'Иванов', 'Александрович', new Date(1987, 1, 12), new Date(2022, 9, 1), 'археология'),
+    new Student('Алексей', 'Андрияшин', 'Михайловна', new Date(1980, 3, 21), new Date(2020, 9, 1), 'социалогия'),
+    new Student('Магамед', 'Курьма', 'Александрович', new Date(1999, 4, 30), new Date(2017, 9, 1), 'информатика'),
+    new Student('Женя', 'Казанова', 'Михайловна', new Date(2001, 7, 23), new Date(2017, 9, 1), 'археология'),
+    new Student('Евгения', 'Шуршин', 'Александрович', new Date(1993, 12, 12), new Date(2019, 9, 1), 'математика'),
+    new Student('Протон', 'Алексеев', 'Михайловна', new Date(1947, 2, 16), new Date(2021, 9, 1), 'экономика'),
+  ];
+
+  let sortAtr = 'fio';
+  let columnDeriction = true;
+  let searchAtr = 'surname';
+  let val;
+
+  BTN_ADD_STUDENT.addEventListener('click', function (event) {
+    event.preventDefault();
+    
+    if (validationForm()) {
+      setStudent(students);
+      crateListStudents();
+      
+      FORM_NAME.value = '';
+      FORM_FACULT.value = '';
+      FORM_BIRTHDAY.value = '';
+      FORM_DATE_START_EDUCATION.value = '';
+    }
+  })
+  
+  TABLE_TITLE.forEach(e => {
+    e.addEventListener('click', function () {
+      sortAtr = this.dataset.column;
+      columnDeriction = !columnDeriction;
+      crateListStudents();
+    })
+  })
+  
+  SEARCH_INPUT.forEach(function (elem) {
+    elem.oninput = function () {
+      searchAtr = this.dataset.set;
+      val = elem.value.trim().toLowerCase();
+      crateListStudents();
+    }
+  })
+
+  function crateListStudents(){ 
+    let studentsCopy = [...students];
+
+    studentsCopy = sortStudents(sortAtr, columnDeriction);
+
+    if (searchStudent(searchAtr, val) != undefined) {
+      studentsCopy = searchStudent(searchAtr, val);
+    }
+
+    TABLE_BODY.innerHTML = '';
+
+    for (let i = 0; i < studentsCopy.length; i++) {
+      TABLE_BODY.append(createRowStudent(studentsCopy[i]));
+    }
+  };
+  
+
+  function searchStudent(param, value) {
+    let studentsCopy = [...students];
+    let a = [];
+    
+    if (value !== '') {
+      if (param == 'fio') {
+        a = studentsCopy.filter(student => student.fio.toLowerCase().includes(value));
+        return a;
+      }
+      if (param == 'facult') {
+        a = studentsCopy.filter(student => student.facult.toLowerCase().includes(value))
+        return a;
+      }
+      if (param == 'dayStartEducation') {
+        a = studentsCopy.filter(student => student.dayStartEducation.getFullYear() == value)
+        return a;
+      }
+      if (param == 'dayEndEducation') {
+        a = studentsCopy.filter(student => student.dayStartEducation.getFullYear() + 4 == value)
+        return a;
+      }
+    }
+    else {
+      return undefined;
+    }
+  }
+
+  // Думаю можно как то сократить, но не знаю как, так как JS не читает переменную(или параметр) после указания имени массива.
+  // Имею ввиду, что нельзя прописать students.PARAM.... так бы можно было бы сократить в 2 раза
+  function validationForm() {
+    if (FORM_NAME.value.trim().split(' ').length < 3) {
+      alertMassage('Введите полностью Имя Фамилию Отчество, через пробел!');
+    }
+    if (FORM_FACULT.value.trim().length < 3) {
+      alertMassage('Введите название факультета полностью!');
+    }
+    if (new Date(formateDateSet(FORM_BIRTHDAY.value)).getFullYear() < 1900
+    && isNaN(new Date(formateDateSet(FORM_BIRTHDAY.value)).getFullYear())) {
+      alertMassage('Ваша дата рождения должна быть больше 1900 года!');
+    }
+    if (new Date(formateDateSet(FORM_DATE_START_EDUCATION.value)).getFullYear() < 2000 
+    && isNaN(new Date(formateDateSet(FORM_DATE_START_EDUCATION.value)).getFullYear())) {
+      alertMassage('Ваша дата начала обучения должна быть после 2000 года!');
+    }
+    else {
+      return true;
+    }
+  }
+
+  function alertMassage(text) {
+    ALERT_MSG.style.opacity = '1';
+    let msg = ALERT_MSG.textContent;
+    if (msg !== '') {
+      ALERT_MSG.innerHTML = msg + '<br>' + text;
+    }
+    else {
+      ALERT_MSG.innerHTML = text;
+    }
+    setTimeout(() => {
+      ALERT_MSG.style.opacity = '0';
+      ALERT_MSG.textContent = '';
+    }, 3000);
+    return false;
+  }
+  
+  function createRowStudent(object) {
+    let tr = document.createElement('tr');
+    let tdName = document.createElement('td');
+    let tdFacult = document.createElement('td');
+    let tdBirthday = document.createElement('td');
+    let tddayStartEducation = document.createElement('td');
+
+    tdName.textContent = object.fio;
+    tdFacult.textContent = object.facult;
+    tdBirthday.textContent = object.formateBirthday() + ' ' + object.odlStudent();
+    tddayStartEducation.textContent = object.educationCurses();
+
+    tr.append(tdName);
+    tr.append(tdFacult);
+    tr.append(tdBirthday);
+    tr.append(tddayStartEducation);
+
+    return tr;
+  }
+
+  function formateDateSet(date) {
+    let fullDate = date.split('-');
+    return new Date(fullDate[0], fullDate[1], fullDate[2]);
+  }
+
+  function setStudent(arr) {
+    let fullName = FORM_NAME.value.split(' ');
+    let firstname = fullName[1];
+    let surname = fullName[0];
+    let middlename = fullName[2];
+
+    arr.push(
+      new Student(
+      firstname, 
+      surname, 
+      middlename, 
+      new Date(formateDateSet(FORM_BIRTHDAY.value)), 
+      new Date(formateDateSet(FORM_DATE_START_EDUCATION.value)), 
+      FORM_FACULT.value)
+    )
+  }
+
+  function sortStudents(prop, dir = false) {
+    let studentsCopy = [...students];
+    return studentsCopy.sort((a, b) => (!dir ? a[prop] < b[prop] : a[prop] > b[prop]) ? -1 : 1);
+  }
+
+  crateListStudents();
+});
+  </script>
+   <script defer type="module" src="script.js"></script>
+  <title>table students</title>
+</head>
+<body>
+  <div class="container">
+    <div class="row new__student">
+      <div class="col">
+        <h4 class="new__title">Введите данные нового студента</h4>
+      </div>
+    </div>
+    <div class="row mb-5">
+      <form>
+        <div class="mb-3">
+          <label for="name" class="form-label">
+            Введите ФИО студента
+          </label>
+            <input type="text" id="name" name="name" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="facult" class="form-label">
+            Введите название факультета
+          </label>
+            <input type="text" id="facult" name="facult" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="birthday" class="form-label">
+            Введите дату рождения
+          </label>
+            <input type="date" name="birthday" class="form-control" id="birthday" min="1900-01-01" max="" required>
+        </div>
+        <div class="mb-4">
+          <label for="educationDate" class="form-label">
+            Введите дату начала обучения
+          </label>
+            <input type="date" name="education-date" class="form-control" id="educationDate" min="2000-01-01" required>
+        </div>
+        <div class="div alert-container"
+        style="
+        position: relative;
+        ">
+          <div class="alert-msg" 
+          style="
+          position:absolute;
+          top: -15px;
+          left: 22%;
+          padding: 10px;
+          border-radius: 10px;
+          border: 1px solid #4051ec;
+          background: #fa4b68;
+          color: #fff;
+          opacity: 0;
+          "></div>
+          <button class="btn btn-primary" id="btnAddStudent">Добавить нового студента</button>
+        </div>
+      </form>
+    </div>
+    <div class="row">
+      <h4 class="">Поиск по списку студентов</h4>
+    </div>
+    <div class="row filter mb-3">
+      <div class="col-4 flex-column d-flex justify-content-between">
+        <label for="search-fio">Поиск по фамилии</label>
+        <input type="text" id="search-fio" class="form-control" data-set="fio">
+      </div>
+      <div class="col-2 flex-column d-flex justify-content-between">
+        <label for="search-facult">Поиск по факультету</label>
+        <input type="text" id="search-facult" class="form-control" data-set="facult">
+      </div>
+      <div class="col-3 flex-column d-flex justify-content-between">
+        <label for="search-birthday">Поиск по году начала обучения</label>
+        <input type="number" name="" id="search-birthday" class="form-control" data-set="dayStartEducation">
+      </div>
+      <div class="col-3 flex-column d-flex justify-content-between">
+        <label for="search-education-years">Поиск по году окончания обучения</label>
+        <input type="number" name="" id="search-education-years" class="form-control" data-set="dayEndEducation">
+      </div>
+    </div>
+    <div class="row mb-3">
+      <h4 class="">Список студентов</h4>
+    </div>
+    <div class="row">
+      <table class="table table-bordered table-hover">
+        <thead>
+          <tr class="table-active table-title">
+            <th class="col-4" data-column = 'fio' 
+            style="
+            cursor: pointer; 
+            border: 1px solid #1e1e1e; 
+            text-align: center;
+            ">ФИО</th>
+            <th class="col-2" data-column = 'facult' 
+            style="
+            cursor: pointer; 
+            border: 1px solid #1e1e1e; 
+            text-align: center;
+            ">Факультет</th>
+            <th class="col-3" data-column = 'birthday' 
+            style="cursor: pointer; 
+            border: 1px solid #1e1e1e; 
+            text-align: center;
+            ">Дата рождения и возраст</th>
+            <th class="col-3" data-column = 'dayStartEducation' 
+            style="
+            cursor: pointer; 
+            border: 1px solid #1e1e1e; 
+            text-align: center;
+            ">Годы обучения и номер курса</th>
+          </tr>
+        </thead>
+        <tbody class="table-body">
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
